@@ -37,13 +37,25 @@ Em teste moderado com 10 pessoas que não conhecem a interface, pelo menos 8 dev
 
 ## User Stories
 
-- Como Planejadora da semana, quero pesquisar e selecionar uma cidade para consultar a previsão do local correto. (FR1, FR2)
-- Como Decisor do dia a dia, quero ver a temperatura e a condição atuais da cidade selecionada para decidir o que vestir ou como me deslocar. (FR3)
-- Como Planejadora da semana, quero consultar os cinco períodos diários da previsão para organizar compromissos e atividades. (FR4)
-- Como Decisor do dia a dia, quero alternar entre Celsius e Fahrenheit para interpretar as temperaturas na unidade que conheço. (FR5)
-- Como Pessoa viajando, quero distinguir cidades com nomes semelhantes pelos dados de localização para consultar o clima do destino correto. (FR1, FR2)
-- Como Pessoa viajando, quero saber quando uma busca não encontra resultados ou uma consulta falha e poder tentar novamente para continuar meu planejamento. (FR6)
-- Como Decisor do dia a dia, quero consultar o clima sem criar uma conta para obter a informação rapidamente. (FR7)
+- **US1** — Como Planejadora da semana, quero pesquisar e selecionar uma cidade para consultar a previsão do local correto. (FR1, FR2)
+- **US2** — Como Decisor do dia a dia, quero ver a temperatura e a condição atuais da cidade selecionada para decidir o que vestir ou como me deslocar. (FR3)
+- **US3** — Como Planejadora da semana, quero consultar os cinco períodos diários da previsão para organizar compromissos e atividades. (FR4)
+- **US4** — Como Decisor do dia a dia, quero alternar entre Celsius e Fahrenheit para interpretar as temperaturas na unidade que conheço. (FR5)
+- **US5** — Como Pessoa viajando, quero distinguir cidades com nomes semelhantes pelos dados de localização para consultar o clima do destino correto. (FR1, FR2)
+- **US6** — Como Pessoa viajando, quero saber quando uma busca não encontra resultados ou uma consulta falha e poder tentar novamente para continuar meu planejamento. (FR6)
+- **US7** — Como Decisor do dia a dia, quero consultar o clima sem criar uma conta para obter a informação rapidamente. (FR7)
+
+## Rastreabilidade
+
+| User Story | Acceptance Criteria | Requisitos não-funcionais relevantes |
+| --- | --- | --- |
+| **US1 — Pesquisar e selecionar cidade** | AC1, AC2, AC4, AC6, AC8, AC11 | NFR1, NFR2, NFR3, NFR4, NFR5, NFR6, NFR7, NFR8, NFR9 |
+| **US2 — Consultar clima atual** | AC5, AC8, AC9 | NFR1, NFR2, NFR3, NFR4, NFR5, NFR6, NFR7, NFR9 |
+| **US3 — Consultar previsão de cinco dias** | AC6, AC8, AC9 | NFR1, NFR2, NFR3, NFR4, NFR5, NFR6, NFR7, NFR9 |
+| **US4 — Alternar unidade** | AC7, AC10 | NFR1, NFR2, NFR3, NFR7, NFR8 |
+| **US5 — Distinguir cidades homônimas** | AC2, AC4, AC11 | NFR1, NFR2, NFR3, NFR4, NFR5, NFR7, NFR8, NFR9 |
+| **US6 — Recuperar-se de busca vazia ou falha** | AC1, AC3, AC8, AC9 | NFR2, NFR3, NFR4, NFR5, NFR6, NFR8, NFR9 |
+| **US7 — Usar sem criar conta** | AC10 | NFR8 |
 
 ## Acceptance Criteria
 
