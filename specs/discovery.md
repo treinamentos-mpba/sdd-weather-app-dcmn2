@@ -69,6 +69,16 @@ As probabilidades abaixo são avaliações preliminares, pois a fonte de dados, 
 - Celsius e Fahrenheit são as duas unidades de temperatura necessárias na primeira versão, conforme o briefing.
 - Não se assume autenticação, persistência de preferências, favoritos, histórico ou funcionamento offline; esses pontos permanecem em aberto.
 
+## Decisões
+
+| Decisão | Justificativa | Perguntas em aberto que resolve |
+| --- | --- | --- |
+| **Fonte de dados: Open-Meteo, sem API key.** | Evita exigir uma chave de API para a integração inicial e simplifica a configuração do produto. Cobertura, limites de uso e disponibilidade ainda devem ser verificados. | Define a fonte de dados e responde se a primeira versão exige uma chave de API; a escolha de fonte também orienta a avaliação de cobertura, custo e dependências. |
+| **"5 dias" = hoje + os quatro dias seguintes.** | Estabelece um período previsível para a consulta da previsão. | Resolve se o período inclui o dia atual; granularidade (diária ou horária) e fuso horário continuam em aberto. |
+| **Unidade padrão: Celsius.** | Define uma apresentação inicial consistente com o idioma da interface. | Resolve qual unidade será usada inicialmente; persistência da preferência e unidades de outras grandezas continuam em aberto. |
+| **Sem autenticação e sem persistência de servidor.** | Mantém a primeira versão sem contas e sem armazenamento de dados no servidor. | Resolve se haverá login e persistência de servidor; armazenamento local no navegador, cache, favoritos e histórico não ficam decididos por esta escolha. |
+| **Idioma da interface: pt-BR.** | Define o idioma da experiência inicial para o público brasileiro. | Resolve o idioma inicial da UI; suporte a outros idiomas e convenções regionais adicionais continuam em aberto. |
+
 ## Personas iniciais
 
 Estas personas são hipóteses para orientar a descoberta; devem ser validadas com usuários reais.
@@ -81,9 +91,7 @@ Estas personas são hipóteses para orientar a descoberta; devem ser validadas c
 
 ## Diretrizes para a próxima etapa
 
-As escolhas abaixo são propostas de trabalho, não decisões aprovadas no briefing:
-
-- Avaliar uma fonte meteorológica sem chave de API, verificando cobertura e limites antes de selecioná-la.
-- Definir se os cinco dias correspondem ao dia atual mais quatro dias ou aos cinco dias seguintes.
-- Confirmar Celsius como unidade inicial e se a preferência deve ser persistida.
-- Confirmar idioma, política de geolocalização, necessidade de cache e requisitos de conta antes de fechar a especificação.
+- Confirmar cobertura, limites de uso, disponibilidade e frequência de atualização do Open-Meteo.
+- Definir granularidade da previsão, fuso horário e atributos meteorológicos exibidos.
+- Decidir se a preferência de unidade será armazenada localmente e se haverá cache, favoritos ou histórico no cliente.
+- Especificar a política de geolocalização, navegadores/dispositivos suportados, metas de qualidade e critérios de aceite.
