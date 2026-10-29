@@ -137,6 +137,35 @@ Contrato do hook para a UI: expor `searchState`, `weatherState`, `selectedCity`,
 
 ## Data Flow
 
+## Data Flow
+
+```mermaid
+flowchart TD
+  A[Input de busca] --> B{Validação local}
+  B -->|Inválido ou vazio| C[Mensagem no campo; sem request]
+  B -->|Válido| D[useWeather: searchState loading]
+  D --> E[weatherService.searchCities]
+  E --> F[Open-Meteo Geocoding]
+  F -->|Lista vazia| G[searchState empty]
+  F -->|Rede, HTTP ou timeout| H[searchState error]
+  F -->|Resultados| I[searchState success; opções de cidade]
+  G --> J[EmptyState: cidade não encontrada]
+  H --> K[ErrorState: retry da busca]
+  I --> L[Pessoa seleciona cidade]
+  L --> M[useWeather: weatherState loading]
+  M --> N[weatherService.getWeather]
+  N --> O[Open-Meteo Forecast]
+  O -->|Rede, HTTP ou timeout| P[weatherState error]
+  O -->|Resposta válida sem dados utilizáveis| Q[weatherState empty]
+  O -->|Resposta completa ou parcial| R[Normalizar para WeatherData]
+  R --> S[useWeather: weatherState success]
+  P --> T[ErrorState: retry para a cidade ativa]
+  Q --> U[EmptyState: dados meteorológicos indisponíveis]
+  S --> V[CurrentWeather e ForecastList]
+  V --> W[UnitToggle altera Unit]
+  W --> X[Render deriva C/F; sem novo request]
+```
+
 1. A pessoa informa a cidade; a UI remove espaços externos e valida o limite de 1–100 caracteres Unicode. Campo vazio ou termo acima do limite não inicia rede.
 2. O hook inicia geocodificação; o serviço codifica o termo com `URLSearchParams`, inicia timeout de 10 s e converte os resultados para `City[]`.
 3. A UI apresenta os resultados com os campos de localização fornecidos. A pessoa seleciona explicitamente um resultado; não há seleção automática de homônimos.
