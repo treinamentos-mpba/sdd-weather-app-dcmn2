@@ -24,27 +24,42 @@ O briefing define as capacidades principais, mas ainda não determina a fonte e 
 
 ## Riscos
 
-| Risco | Probabilidade | Impacto | Mitigação sugerida |
-| --- | --- | --- | --- |
-| Fonte meteorológica indisponível, lenta ou com limites de uso | Média; confirmar após escolha da fonte | Alto: consultas podem falhar ou demorar | Avaliar cobertura, limites e disponibilidade antes da escolha; prever tratamento de falha e, se apropriado, cache. |
-| Busca retornar cidades homônimas ou localização imprecisa | Alta em localidades com nomes repetidos | Alto: dados podem ser exibidos para o lugar errado | Apresentar informações de desambiguação, como estado/região e país, antes da seleção. |
-| Definição ambígua de cinco dias ou fuso horário | Média | Médio/alto: datas e período podem divergir da expectativa | Definir período, timezone e apresentação das datas; validar exemplos com usuários. |
-| Interface ou controles difíceis de usar em telas pequenas | Média | Alto: compromete o requisito explícito de uso móvel | Projetar e validar em viewports móveis representativos, incluindo telas estreitas e testes em dispositivo. |
-| Conversão de temperatura ou unidades inconsistente entre telas | Baixa/média | Alto: informação meteorológica incorreta ou confusa | Definir unidade como preferência consistente e validar conversões e exibição em testes. |
-| Conectividade instável impedir a consulta | Média | Médio/alto: usuário pode não obter os dados | Comunicar estado e permitir nova tentativa; decidir se dados em cache devem ser exibidos e identificados como desatualizados. |
+As probabilidades abaixo são avaliações preliminares, pois a fonte de dados, o público e os critérios de operação ainda não foram definidos.
+
+| Categoria | Risco | Probabilidade | Impacto | Estratégia de mitigação |
+| --- | --- | --- | --- | --- |
+| Técnico | Fonte meteorológica indisponível, lenta ou sujeita a limites de uso | Média | Alto: consultas podem falhar, atrasar ou exceder limites/custos | Avaliar cobertura, SLA, limites e custos antes da escolha; tratar falhas, monitorar dependência e definir cache ou alternativa quando viável. |
+| Técnico e produto | Dados desatualizados, imprecisos ou sem cobertura para a cidade buscada | Média | Alto: decisões do usuário podem se basear em informação incorreta ou indisponível | Validar cobertura e frequência de atualização da fonte; exibir local e horário da observação e comunicar indisponibilidade de dados. |
+| Produto | Cidades homônimas ou geocodificação incorreta levam à previsão do local errado | Média | Alto: reduz confiança e pode induzir decisões inadequadas | Mostrar cidade, região/estado e país nos resultados; exigir seleção clara quando houver ambiguidades e validar exemplos de busca. |
+| Técnico e produto | Interpretação divergente dos cinco dias, datas ou fuso horário | Média | Médio/alto: previsão exibida para datas inesperadas | Definir período e granularidade; usar o fuso do local consultado e testar limites de dia e mudanças de horário. |
+| Técnico | Conversão ou apresentação de unidades inconsistente entre clima atual e previsão | Baixa | Alto: valores podem ser interpretados incorretamente | Centralizar conversões, exibir unidade junto aos valores e cobrir ambas as unidades com testes automatizados. |
+| Técnico e produto | Rede instável ou falha da API deixa a tela sem dados ou sem orientação | Média | Alto: interrompe o principal fluxo do produto | Implementar estados de carregamento/erro e nova tentativa; definir política de cache e indicar claramente quando dados podem estar desatualizados. |
+| Produto | Experiência móvel inadequada ou incompatível com dispositivos/navegadores relevantes | Média | Alto: impede o uso no contexto explicitamente pedido | Definir matriz mínima de navegadores e larguras; testar busca, leitura e controles em telas pequenas e com toque. |
+| Técnico e produto | Acessibilidade insuficiente impede alguns usuários de concluir consultas | Média | Médio/alto: exclui usuários e pode gerar barreiras de conformidade | Adotar critérios de acessibilidade verificáveis, testar teclado e leitor de tela e corrigir contraste e semântica dos controles. |
+| Produto | Escopo e critérios de sucesso indefinidos geram entregas desalinhadas ou expansão contínua | Alta | Alto: atrasos, retrabalho e divergência sobre o que significa concluir a primeira versão | Aprovar público prioritário, escopo de MVP, métricas e critérios de aceite antes do desenvolvimento; tratar extras como decisões explícitas. |
+| Técnico e produto | Coleta de localização ou histórico sem política clara de privacidade | Baixa/média | Alto: perda de confiança e possíveis obrigações legais | Minimizar coleta e retenção; pedir permissão quando necessário, documentar uso dos dados e validar requisitos de privacidade aplicáveis. |
+| Produto | Aplicação não atende às necessidades reais e tem baixa adoção | Média | Alto: baixo valor entregue apesar da implementação correta | Validar personas e fluxos com usuários; observar métricas de busca concluída e retorno, revisando prioridades com base em evidências. |
 
 ## Perguntas em Aberto
 
-1. **Qual fonte de dados será usada e qual cobertura geográfica e frequência de atualização são necessárias?** Impacto: define disponibilidade, precisão, limites de uso e possíveis custos.
-2. **O período de cinco dias inclui hoje ou os cinco dias seguintes? A previsão será diária ou incluirá intervalos horários?** Impacto: altera conteúdo, datas e layout.
-3. **Quais atributos devem aparecer no clima atual e em cada dia da previsão?** Impacto: define o conteúdo essencial e a densidade da interface.
-4. **Como o usuário deve escolher entre cidades com o mesmo nome? Quais localidades/regiões precisam ser suportadas?** Impacto: afeta precisão da busca e prevenção de consultas ao local errado.
-5. **Qual será a unidade inicial e a escolha deve persistir entre visitas?** Impacto: afeta a primeira consulta, preferências e comportamento após recarregar a aplicação.
-6. **Quais idiomas e formatos de data/hora devem ser suportados?** Impacto: afeta textos, localização e legibilidade dos dados.
-7. **A aplicação deve solicitar geolocalização ou sempre exigir busca manual?** Impacto: altera o fluxo inicial, permissões e tratamento de privacidade.
-8. **Qual comportamento é esperado sem conexão ou durante falha da fonte de dados? É necessário cache?** Impacto: afeta resiliência, atualização e complexidade de implementação.
-9. **Quais navegadores, tamanhos de tela e critérios de acessibilidade são requisitos de aceite?** Impacto: define a matriz de compatibilidade e o esforço de validação.
-10. **Há necessidade de login, cidades favoritas ou histórico de buscas?** Impacto: pode introduzir persistência, dados pessoais e escopo adicional.
+1. **Quem são os usuários prioritários e que decisões esperam tomar com o app?** Impacto: orienta prioridades, conteúdo e fluxos principais.
+2. **"Usar em dispositivos móveis" significa site responsivo, aplicativo nativo ou ambos? Quais sistemas e navegadores devem ser suportados?** Impacto: altera arquitetura, distribuição, esforço e plano de testes.
+3. **A busca aceita nomes parciais, acentos e diferentes idiomas? Deve sugerir resultados enquanto o usuário digita?** Impacto: afeta usabilidade, comportamento da busca e cobertura geográfica necessária.
+4. **Como distinguir cidades homônimas? Devem aparecer estado/região e país? Quais países ou localidades são relevantes?** Impacto: uma seleção ambígua pode exibir dados do local errado.
+5. **O app deve detectar localização automaticamente, pedir permissão ou exigir busca manual?** Impacto: altera o fluxo inicial e envolve permissões, privacidade e tratamento de localização negada.
+6. **De onde virão as observações e previsões? Qual cobertura geográfica, custo e limite de uso são aceitáveis?** Impacto: determina viabilidade, precisão, disponibilidade e dependências externas.
+7. **"Clima atual" significa observação recente ou condição estimada? Com que frequência os dados precisam ser atualizados?** Impacto: afeta precisão percebida, latência, custo e exibição do horário da medição.
+8. **Os cinco dias incluem hoje ou os cinco dias seguintes? A previsão será diária, por hora ou ambas? Qual fuso horário define a data?** Impacto: altera o período consultado, o layout e a interpretação das datas.
+9. **Quais informações devem aparecer no clima atual e na previsão, além da temperatura?** Impacto: define conteúdo, densidade visual e necessidades da fonte de dados.
+10. **Celsius/Fahrenheit se aplica apenas à temperatura? Quais serão as unidades de vento, precipitação e pressão? Qual unidade será inicial?** Impacto: afeta consistência, compreensão dos dados e conversões.
+11. **A unidade escolhida deve continuar após recarregar ou voltar ao app?** Impacto: define se é preciso armazenar preferências e onde fazê-lo.
+12. **Quais idiomas, formatos de data/hora e convenções regionais serão suportados?** Impacto: afeta textos, busca, formatação dos dados e esforço de localização.
+13. **O que deve acontecer se não houver resultados, a consulta falhar ou a fonte estiver indisponível? Deve haver nova tentativa ou dados em cache?** Impacto: sem esse comportamento, falhas de rede podem deixar o usuário sem explicação ou próximo passo.
+14. **Quais metas de disponibilidade e tempo de resposta são aceitáveis, e em quais condições serão medidas?** Impacto: sem metas, não há critério objetivo para avaliar qualidade ou negociar limites da fonte externa.
+15. **Qual nível de acessibilidade é esperado? Quais larguras de tela e métodos de interação precisam ser validados?** Impacto: pode exigir decisões de design e implementação que são difíceis de corrigir no fim do projeto.
+16. **O usuário poderá salvar cidades, consultar histórico ou sincronizar preferências? É necessário login?** Impacto: pode ampliar significativamente o escopo e introduzir persistência e tratamento de dados pessoais.
+17. **Quais dados de busca ou localização serão coletados, armazenados e por quanto tempo?** Impacto: afeta consentimento, segurança, política de privacidade e obrigações legais.
+18. **Como será medido o sucesso do produto e quais fluxos precisam estar concluídos para considerar a primeira versão pronta?** Impacto: sem métricas e critérios de aceite, prioridades e conclusão ficam sujeitas a interpretações diferentes.
 
 ## Suposições
 
@@ -56,10 +71,13 @@ O briefing define as capacidades principais, mas ainda não determina a fonte e 
 
 ## Personas iniciais
 
-Estas personas são arquétipos para orientar descoberta posterior, não segmentos confirmados por pesquisa.
+Estas personas são hipóteses para orientar a descoberta; devem ser validadas com usuários reais.
 
-- **Pessoa que planeja a semana:** consulta a previsão de cinco dias para organizar compromissos e atividades.
-- **Pessoa que decide o que fazer hoje:** consulta rapidamente o clima atual, muitas vezes pelo celular, para planejar o dia.
+| Persona | Objetivo principal | Contexto de uso | Métrica de sucesso para a pessoa |
+| --- | --- | --- | --- |
+| **Planejadora da semana** | Consultar os próximos dias para escolher quando realizar compromissos ou atividades. | Principalmente desktop, ao organizar a agenda; consulta ocasional pelo celular. | Encontra a cidade e entende a previsão dos cinco dias em até um minuto, sem precisar consultar outra fonte para interpretar as datas. |
+| **Decisor do dia a dia** | Ver rapidamente as condições atuais para decidir o que vestir ou como se deslocar. | Principalmente mobile, em consultas rápidas antes de sair de casa ou durante o dia. | Identifica a temperatura atual, a condição do tempo e a unidade escolhida em até 30 segundos. |
+| **Pessoa viajando** | Pesquisar uma cidade que pode não conhecer e avaliar as condições durante a viagem. | Mobile em trânsito; desktop ao planejar antes da viagem. | Seleciona o local correto entre resultados semelhantes e acessa a previsão sem confundir cidade, região ou fuso horário. |
 
 ## Diretrizes para a próxima etapa
 
