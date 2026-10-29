@@ -2,9 +2,9 @@
 
 ## Architecture
 
-Aplicação SPA client-side, sem backend próprio. O fluxo segue uma direção única: `App → components + hooks → services → lib/types`. `lib` e `types` não dependem de React nem de APIs de rede. Não criar camada genérica de repositório, cache ou state store.
+Aplicação SPA client-side, sem backend próprio. Direção de dependências: `App → hooks → services → lib/types` e `App → components`; componentes podem importar contratos e funções puras, mas nunca hooks ou services. `lib` e `types` não dependem de React nem de APIs de rede. Não criar camada genérica de repositório, cache ou state store.
 
-- **Apresentação (`components`):** componentes controlados por props, responsáveis por renderizar dados, estados e ações acessíveis. Não fazem `fetch`, não conhecem URLs e não mantêm cópia do estado global do fluxo.
+- **Apresentação (`components`):** componentes controlados por props, responsáveis por renderizar dados, estados e ações acessíveis. `ProviderNotice` informa, junto à busca, que termo e coordenadas necessários são enviados ao Open-Meteo; não solicita consentimento adicional. Componentes não fazem `fetch`, não conhecem URLs e não mantêm cópia do estado global do fluxo.
 - **Composição (`App.tsx`):** instancia `useWeather`, liga estado e callbacks aos componentes e define a composição da tela; não contém protocolo HTTP nem regras de conversão.
 - **Orquestração (`hooks`):** `useWeather` mantém resultados e estados de busca/forecast, cidade selecionada e unidade; coordena `searchCities`/`getWeather`, retry, cancelamento e descarte de respostas antigas.
 - **Acesso a dados (`services`):** `weatherService` monta chamadas Open-Meteo, aplica timeout, trata status/JSON e entrega modelos internos. Não importa React nem componentes.
@@ -35,6 +35,7 @@ src/
   components/
     # Apresentação; recebe dados e callbacks por props
     SearchBar.tsx
+    ProviderNotice.tsx
     CurrentWeather.tsx
     ForecastList.tsx
     ForecastCard.tsx
@@ -79,32 +80,32 @@ Os tipos internos são independentes do formato Open-Meteo, com nomes dos campos
 type Unit = "celsius" | "fahrenheit";
 
 interface City {
-  id?: number; // Open-Meteo geocoding result id.
-  name: string; // Open-Meteo `name`.
-  region?: string; // Open-Meteo `admin1`, when provided.
-  country?: string; // Open-Meteo `country`, when provided.
-  latitude: number; // Open-Meteo `latitude`; used in forecast requests.
-  longitude: number; // Open-Meteo `longitude`; used in forecast requests.
+  id?: number; // Identificador do resultado de geocodificação Open-Meteo.
+  name: string; // Campo `name` retornado pelo Open-Meteo.
+  region?: string; // Campo `admin1`, quando fornecido.
+  country?: string; // Campo `country`, quando fornecido.
+  latitude: number; // Campo `latitude`; usado nas consultas de previsão.
+  longitude: number; // Campo `longitude`; usado nas consultas de previsão.
 }
 
 interface CurrentWeather {
-  temperatureC: number | null; // Open-Meteo `current.temperature_2m`, normalized to Celsius.
-  weatherCode: number | null; // Open-Meteo `current.weather_code`; mapped to a pt-BR description.
-  observedAt: string | null; // Open-Meteo `current.time`, local to the returned timezone.
+  temperatureC: number | null; // Campo `current.temperature_2m`, normalizado para Celsius.
+  weatherCode: number | null; // Campo `current.weather_code`; mapeado para descrição em pt-BR.
+  observedAt: string | null; // Campo `current.time`, local ao fuso retornado.
 }
 
 interface ForecastDay {
-  date: string; // Open-Meteo `daily.time`, as local YYYY-MM-DD (not UTC).
-  weatherCode: number | null; // Open-Meteo `daily.weather_code`.
-  minimumC: number | null; // Open-Meteo `daily.temperature_2m_min`, normalized to Celsius.
-  maximumC: number | null; // Open-Meteo `daily.temperature_2m_max`, normalized to Celsius.
+  date: string; // Campo `daily.time` como data local YYYY-MM-DD, não UTC.
+  weatherCode: number | null; // Campo `daily.weather_code`.
+  minimumC: number | null; // Campo `daily.temperature_2m_min`, normalizado para Celsius.
+  maximumC: number | null; // Campo `daily.temperature_2m_max`, normalizado para Celsius.
 }
 
 interface WeatherData {
-  city: City; // Selected geocoding result used for this response.
-  timezone: string; // Open-Meteo forecast response `timezone` for this location.
-  current: CurrentWeather; // Current observation returned for the selected city.
-  forecast: ForecastDay[]; // Five local calendar days, today through today + 4.
+  city: City; // Resultado de geocodificação selecionado para esta resposta.
+  timezone: string; // Campo `timezone` retornado para este local.
+  current: CurrentWeather; // Condições atuais retornadas para a cidade selecionada.
+  forecast: ForecastDay[]; // Cinco datas locais: hoje e os quatro dias seguintes.
 }
 
 type RequestState<T> =
@@ -122,7 +123,7 @@ interface WeatherError {
 }
 ```
 
-`City` guarda as coordenadas selecionadas como identidade para consultas, mesmo quando o nome não é único. `ForecastDay.date` é uma data civil (`YYYY-MM-DD`), não um instante UTC. `WeatherData.forecast` é normalizado para cinco posições; campos faltantes recebem `null`, nunca valor interpolado. `weatherCode` é traduzido para pt-BR por uma função pura; código desconhecido produz condição indisponível.
+`City` guarda as coordenadas selecionadas como identidade para consultas, mesmo quando o nome não é único. `ForecastDay.date` é uma data civil (`YYYY-MM-DD`), não um instante UTC. `WeatherData.forecast` contém exatamente cinco datas civis esperadas. A data-base é a data local de hoje no `timezone` retornado; avançar os quatro dias seguintes com aritmética de calendário, sem converter datas civis para UTC. Mapear observações por data e preencher métricas sem observação com `null`; nunca interpolar valores. `weatherCode` é traduzido para pt-BR por uma função pura; código desconhecido produz condição indisponível.
 
 Contrato de alto nível do serviço:
 
@@ -134,8 +135,6 @@ interface WeatherService {
 ```
 
 Contrato do hook para a UI: expor `searchState`, `weatherState`, `selectedCity`, `unit: Unit`, `search(query)`, `selectCity(city)`, `setUnit(unit: Unit)` e `retryWeather()`. Componentes não acessam Open-Meteo diretamente.
-
-## Data Flow
 
 ## Data Flow
 
@@ -166,7 +165,7 @@ flowchart TD
   W --> X[Render deriva C/F; sem novo request]
 ```
 
-1. A pessoa informa a cidade; a UI remove espaços externos e valida o limite de 1–100 caracteres Unicode. Campo vazio ou termo acima do limite não inicia rede.
+1. A pessoa informa a cidade; a UI remove espaços externos e valida o limite de 1–100 pontos de código Unicode. Campo vazio ou termo acima do limite não inicia rede. `ProviderNotice` informa que o termo e as coordenadas necessárias serão enviados ao Open-Meteo; o aviso não bloqueia a busca.
 2. O hook inicia geocodificação; o serviço codifica o termo com `URLSearchParams`, inicia timeout de 10 s e converte os resultados para `City[]`.
 3. A UI apresenta os resultados com os campos de localização fornecidos. A pessoa seleciona explicitamente um resultado; não há seleção automática de homônimos.
 4. A seleção dispara `getWeather(city)`. O serviço consulta a previsão para latitude/longitude, solicita valores Celsius e `timezone=auto`, e normaliza clima atual, timezone e cinco dias.
@@ -227,7 +226,7 @@ flowchart TD
 ```
 
 - **Mapeamento para `WeatherData`:** associar o `City` selecionado a `city`; `timezone → timezone`; `current.temperature_2m → current.temperatureC`; `current.weather_code → current.weatherCode`; `current.time → current.observedAt`. Para cada índice `i`, criar um `ForecastDay`: `daily.time[i] → date`, `daily.weather_code[i] → weatherCode`, `daily.temperature_2m_min[i] → minimumC` e `daily.temperature_2m_max[i] → maximumC`.
-- **Validação/normalização:** arrays diários são alinhados pelo índice, não por ordenação independente. Resposta completa gera cinco dias. Se um campo ou data estiver ausente, normalizar o dado ausente para `null` e manter as cinco datas esperadas; não extrapolar nem inventar valores. Validar `timezone`, tipos numéricos e `current` antes de produzir `WeatherData`.
+- **Validação/normalização:** usar `daily.time[i]` para associar, pelo mesmo índice, cada métrica ao dia correspondente. Gerar primeiro as cinco datas civis esperadas a partir de hoje no timezone retornado; sobrepor valores apenas para datas válidas presentes em `daily.time`. Se uma data ou campo estiver ausente, manter a data esperada e preencher suas métricas com `null`; ignorar métricas órfãs sem data correspondente. Validar `timezone` e tipos antes de produzir `WeatherData`.
 - Ambas as APIs são chamadas diretamente pelo browser, sem API key. Cobertura, limites de uso e termos devem ser verificados para a geografia de lançamento antes da publicação.
 
 ## State Management
@@ -263,22 +262,23 @@ As temperaturas normalizadas permanecem em Celsius no `WeatherData`. A apresenta
 - **Normalizadores (`lib/openMeteoMapper`):** testar payload geocoding/forecast válido, arrays desalinhados, campos opcionais ausentes, payload parcial, JSON com tipo inesperado e ausência de dados utilizáveis. Asserir que `null` representa ausência e que nenhum valor é interpolado.
 - **Serviços (`services`, `fetch` mockado):** verificar endpoint e parâmetros de geocoding; coordenadas, `current`, `daily`, Celsius, timezone e cinco dias no forecast; respostas vazias; HTTP 4xx/429/5xx; falha de rede; JSON inválido; timeout aos 10 s; cancelamento intencional e resposta tardia. Asserir os códigos `WeatherError` e `retryable` corretos.
 - **Hook (`useWeather`, serviço mockado):** verificar transições `idle → loading → success/empty/error`, seleção de cidade, retry, unidade sem nova chamada ao serviço, erro limpo após sucesso e descarte de resposta fora de ordem.
-- **Componentes (Testing Library + `user-event`):** renderizar loading, erro, vazio e sucesso de forma independente; verificar busca/seleção, input inválido sem rede, troca de unidade sem nova consulta, retry, foco, teclado e anúncio acessível de status/erro. Componentes recebem props/callbacks e não exigem mock de `fetch`.
+- **Componentes (Testing Library + `user-event`):** renderizar loading, erro, vazio e sucesso de forma independente; verificar busca/seleção, input inválido sem rede, aviso visível de privacidade, troca de unidade sem nova consulta, retry, foco, teclado e anúncio acessível de status/erro. Componentes recebem props/callbacks e não exigem mock de `fetch`.
 
 ### Playwright
 
 - Interceptar Open-Meteo com `page.route`; E2E não depende de disponibilidade ou dados ao vivo do provedor.
-- Cobrir o fluxo principal: submeter busca, escolher cidade, verificar clima atual e cinco datas diárias, alternar unidade e confirmar que a troca não dispara nova requisição.
+- Cobrir o fluxo principal: verificar o aviso de privacidade; submeter busca, escolher cidade, verificar clima atual e cinco datas diárias, alternar unidade e confirmar que a troca não dispara nova requisição.
 - Cobrir cidade homônima com escolha explícita, busca sem resultados, input vazio, erro de API, timeout, retry bem-sucedido e resposta parcial sem valores inventados.
 - Executar os fluxos principais nos viewports de 320 × 720, 390 × 844, 768 × 1024 e 1280 × 800 CSS px; verificar ausência de rolagem horizontal e controles utilizáveis em mobile.
-- Executar a matriz de browsers/dispositivos de NFR2 no CI. Rodar axe nos estados inicial, resultados e erro; complementar com revisão manual de teclado/leitor de tela conforme NFR3.
+- No CI, executar Playwright em Chromium (Chrome estável), Edge estável, Firefox e WebKit; verificar a versão estável atual e a anterior na matriz de compatibilidade. WebKit em viewport mobile não conta como validação de Safari iOS real: antes do lançamento, executar smoke dos fluxos principais em Safari/iOS e Chrome/Android em dispositivos físicos ou device farm. Rodar axe nos estados inicial, resultados e erro; complementar com revisão manual de teclado/leitor de tela conforme NFR3.
 - Manter testes com chamadas reais à Open-Meteo fora dos testes de aceitação determinísticos; usar smoke test sintético separado para disponibilidade e dependência externa.
 
 ### Critérios de manutenção
 
 - Cada caso automatizado deve referenciar o AC/US que cobre.
 - Preferir asserts de comportamento observável e parâmetros/contratos públicos; evitar asserts de estrutura interna de componentes ou implementação do hook.
-- CI deve executar unitários, componentes, E2E mockado, lint e build. Desempenho, disponibilidade do provedor e validação manual de acessibilidade são gates separados descritos nos NFRs.
+- CI deve executar `pnpm test`, `pnpm test:e2e`, `pnpm lint` e `pnpm build`. Desempenho, disponibilidade do provedor, teste moderado de usabilidade e validação manual de acessibilidade são gates separados.
+- **Gate de usabilidade:** conduzir teste moderado com 10 pessoas não familiarizadas com a interface. Cada pessoa deve pesquisar/selecionar a cidade correta, consultar a previsão de cinco dias e alternar a unidade sem ajuda. Registrar conclusão por tarefa e erros de seleção; aprovar o gate se pelo menos 8 de 10 concluírem o fluxo definido na spec. Não coletar resultados por telemetria na V1.
 
 ## Risks & Trade-offs
 
